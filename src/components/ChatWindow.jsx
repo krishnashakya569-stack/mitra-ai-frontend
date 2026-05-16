@@ -12,9 +12,9 @@ export default function ChatWindow({ conversation, onUpdateMessages }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [conversation?.messages, loading])
 
-  const sendMessage = async (text, image = null) => {
-    if ((!text.trim() && !image) || loading) return
-    const userMsg = { role: 'user', content: text || 'Please analyze this file.', image }
+  const sendMessage = async (text, attachment = null) => {
+    if ((!text.trim() && !attachment) || loading) return
+    const userMsg = { role: 'user', content: text || 'Please analyze this file.', attachment }
     const newMessages = [...(conversation?.messages || []), userMsg]
     onUpdateMessages(newMessages)
     setLoading(true)
@@ -22,7 +22,7 @@ export default function ChatWindow({ conversation, onUpdateMessages }) {
       const res = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })), image })
+        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })), attachment })
       })
       const data = await res.json()
       onUpdateMessages([...newMessages, { role: 'assistant', content: data.message || data.error }])
@@ -80,3 +80,4 @@ export default function ChatWindow({ conversation, onUpdateMessages }) {
     </div>
   )
 }
+
