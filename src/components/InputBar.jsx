@@ -1,6 +1,7 @@
 ﻿import { useRef, useState } from 'react'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
+const MIN_RECORDING_MS = 1200
 
 export default function InputBar({ onSend, loading }) {
   const [text, setText] = useState('')
@@ -13,6 +14,7 @@ export default function InputBar({ onSend, loading }) {
   const mediaRecorderRef = useRef(null)
   const streamRef = useRef(null)
   const chunksRef = useRef([])
+  const startedAtRef = useRef(0)
 
   const handleFile = (e) => {
     const file = e.target.files[0]
@@ -37,11 +39,22 @@ export default function InputBar({ onSend, loading }) {
   const startRecording = async () => {
     try {
       setSpeechError('')
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      })
       streamRef.current = stream
       chunksRef.current = []
+      startedAtRef.current = Date.now()
 
-      const recorder = new MediaRecorder(stream)
+      const options = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? { mimeType: 'audio/webm;codecs=opus' }
+        : undefined
+      const recorder = new MediaRecorder(stream, options)
       mediaRecorderRef.current = recorder
 
       recorder.ondataavailable = (event) => {
@@ -72,7 +85,7 @@ export default function InputBar({ onSend, loading }) {
         }
       }
 
-      recorder.start()
+      recorder.start(250)
       setRecording(true)
     } catch (error) {
       setSpeechError(
@@ -84,6 +97,12 @@ export default function InputBar({ onSend, loading }) {
   }
 
   const stopRecording = () => {
+    const elapsed = Date.now() - startedAtRef.current
+    if (elapsed < MIN_RECORDING_MS) {
+      setSpeechError('Speak for at least one full second, then stop recording.')
+      return
+    }
+
     mediaRecorderRef.current?.stop()
     setRecording(false)
   }
@@ -148,7 +167,7 @@ export default function InputBar({ onSend, loading }) {
             onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#777'; }}>
             📎 Attach file
           </button>
-          <span style={{ fontSize:11, color:'#444' }}>{recording ? 'Recording… click again to stop' : transcribing ? 'Turning speech into text…' : 'Mic ready · Enter to send'}</span>
+          <span style={{ fontSize:11, color:'#444' }}>{recording ? 'Recording… speak clearly, then click again' : transcribing ? 'Turning speech into text…' : 'Mic ready · speak for 1–2 seconds minimum'}</span>
         </div>
       </div>
     </div>
