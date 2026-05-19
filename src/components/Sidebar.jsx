@@ -1,4 +1,4 @@
-﻿export default function Sidebar({ conversations, activeId, onSelect, onNew }) {
+﻿export default function Sidebar({ conversations, activeId, onSelect, onNew, user, onSignOut }) {
   return (
     <div style={{ width:256, background:'#171717', display:'flex', flexDirection:'column', height:'100vh', borderRight:'1px solid #2a2a2a', flexShrink:0 }}>
       <div style={{ padding:'16px 12px 10px' }}>
@@ -30,9 +30,14 @@
         ))}
       </div>
 
-      <div style={{ padding:'12px 14px', borderTop:'1px solid #252525', display:'flex', alignItems:'center', gap:9 }}>
-        <div style={{ width:30, height:30, borderRadius:'50%', background:'#1d3a5f', display:'flex', alignItems:'center', justifyContent:'center', color:'#60a5fa', fontSize:12, fontWeight:600 }}>U</div>
-        <span style={{ fontSize:13, color:'#ccc', fontWeight:500 }}>User</span>
+      <div style={{ padding:'12px 14px', borderTop:'1px solid #252525' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:10 }}>
+          <div style={{ width:30, height:30, borderRadius:'50%', background:'#1d3a5f', display:'flex', alignItems:'center', justifyContent:'center', color:'#60a5fa', fontSize:12, fontWeight:600 }}>{user?.email?.[0]?.toUpperCase() || 'U'}</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:13, color:'#ccc', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.email}</div>
+          </div>
+        </div>
+        <button onClick={onSignOut} style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1px solid #333', background:'transparent', color:'#888', cursor:'pointer' }}>Sign out</button>
       </div>
     </div>
   )
