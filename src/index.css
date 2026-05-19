@@ -71,3 +71,22 @@ button, textarea, input {
     max-width: calc(100vw - 32px);
   }
 }
+
+.prose img {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid #333;
+  margin: 12px 0;
+  background: #171717;
+}
+
+@media (max-width: 768px) {
+  .prose img {
+    width: 100%;
+    max-height: 58vh;
+    border-radius: 12px;
+  }
+}
