@@ -2,7 +2,7 @@
 import Sidebar from './components/Sidebar'
 import ChatWindow from './components/ChatWindow'
 import AuthPanel from './components/AuthPanel'
-import { supabase } from './lib/supabase'
+import { supabase, supabaseConfigError } from './lib/supabase'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -14,7 +14,7 @@ function App() {
 
   useEffect(() => {
     if (!supabase) {
-      setAuthError('Supabase is not configured yet.')
+      setAuthError(supabaseConfigError || 'Supabase is not configured yet.')
       setAuthLoading(false)
       return
     }
@@ -146,3 +146,4 @@ function App() {
 }
 
 export default App
+
