@@ -19,8 +19,9 @@ function App() {
       return
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) setAuthError(error.message)
+      setSession(data?.session || null)
       setAuthLoading(false)
     })
 
@@ -38,25 +39,51 @@ function App() {
       return
     }
 
-    loadConversations()
+    loadConversations(session.user.id)
   }, [session?.user?.id])
 
-  const loadConversations = async () => {
+  const loadConversations = async (userId) => {
     setLoadingChats(true)
+    setAuthError('')
+
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('id,title,messages,updated_at')
+        .order('updated_at', { ascending: false })
+
+      if (error) throw error
+
+      if (data?.length) {
+        setConversations(data)
+        setActiveId(data[0].id)
+        return
+      }
+
+      await createConversation(userId)
+    } catch (error) {
+      setAuthError(error.message || 'Could not load your chats.')
+      setConversations([])
+      setActiveId(null)
+    } finally {
+      setLoadingChats(false)
+    }
+  }
+
+  const createConversation = async (userId = session?.user?.id) => {
+    if (!userId) return null
+
     const { data, error } = await supabase
       .from('conversations')
+      .insert({ user_id: userId, title: 'New conversation', messages: [] })
       .select('id,title,messages,updated_at')
-      .order('updated_at', { ascending: false })
+      .single()
 
-    if (error) {
-      setAuthError(error.message)
-    } else if (data.length) {
-      setConversations(data)
-      setActiveId(data[0].id)
-    } else {
-      await newConversation()
-    }
-    setLoadingChats(false)
+    if (error) throw error
+
+    setConversations(prev => [data, ...prev])
+    setActiveId(data.id)
+    return data
   }
 
   const signIn = async (email, password) => {
@@ -81,20 +108,12 @@ function App() {
   }
 
   const newConversation = async () => {
-    if (!session?.user) return
-    const { data, error } = await supabase
-      .from('conversations')
-      .insert({ user_id: session.user.id, title: 'New conversation', messages: [] })
-      .select('id,title,messages,updated_at')
-      .single()
-
-    if (error) {
-      setAuthError(error.message)
-      return
+    setAuthError('')
+    try {
+      await createConversation()
+    } catch (error) {
+      setAuthError(error.message || 'Could not create a new conversation.')
     }
-
-    setConversations(prev => [data, ...prev])
-    setActiveId(data.id)
   }
 
   const updateMessages = async (messages) => {
@@ -136,14 +155,25 @@ function App() {
         user={session.user}
         onSignOut={signOut}
       />
-      {loadingChats || !activeConv ? (
+      {loadingChats ? (
         <div style={{ flex:1, display:'grid', placeItems:'center', color:'#777' }}>Loading chats…</div>
-      ) : (
+      ) : activeConv ? (
         <ChatWindow conversation={activeConv} onUpdateMessages={updateMessages} />
+      ) : (
+        <div style={{ flex:1, display:'grid', placeItems:'center', background:'#212121', color:'#aaa', padding:24, textAlign:'center' }}>
+          <div style={{ maxWidth:420 }}>
+            <div style={{ color:'#ececec', fontSize:22, fontWeight:600, marginBottom:8 }}>No conversation loaded</div>
+            <div style={{ color: authError ? '#f87171' : '#888', fontSize:14, lineHeight:1.6, marginBottom:18 }}>
+              {authError || 'Start a new conversation to begin using Mitra AI.'}
+            </div>
+            <button onClick={newConversation} style={{ padding:'10px 14px', borderRadius:10, border:'none', background:'#c96442', color:'white', cursor:'pointer', fontWeight:600 }}>
+              Start new conversation
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
 export default App
-
