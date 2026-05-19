@@ -47,3 +47,27 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .msg-fade { animation: fadeIn 0.25s ease forwards; }
+html, body, #root {
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+button, textarea, input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px) {
+  body {
+    overscroll-behavior: none;
+  }
+
+  .prose {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .prose pre {
+    max-width: calc(100vw - 32px);
+  }
+}

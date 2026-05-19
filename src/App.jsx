@@ -11,6 +11,18 @@ function App() {
   const [conversations, setConversations] = useState([])
   const [activeId, setActiveId] = useState(null)
   const [loadingChats, setLoadingChats] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+      if (!mobile) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   useEffect(() => {
     if (!supabase) {
@@ -111,9 +123,15 @@ function App() {
     setAuthError('')
     try {
       await createConversation()
+      if (isMobile) setSidebarOpen(false)
     } catch (error) {
       setAuthError(error.message || 'Could not create a new conversation.')
     }
+  }
+
+  const selectConversation = (id) => {
+    setActiveId(id)
+    if (isMobile) setSidebarOpen(false)
   }
 
   const updateMessages = async (messages) => {
@@ -146,19 +164,26 @@ function App() {
   const activeConv = conversations.find(c => c.id === activeId)
 
   return (
-    <div style={{ display:'flex', height:'100vh', background:'#212121' }}>
+    <div style={{ display:'flex', height:'100dvh', width:'100vw', overflow:'hidden', background:'#212121', position:'relative' }}>
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:20 }} />
+      )}
+
       <Sidebar
         conversations={conversations}
         activeId={activeId}
-        onSelect={setActiveId}
+        onSelect={selectConversation}
         onNew={newConversation}
         user={session.user}
         onSignOut={signOut}
+        isMobile={isMobile}
+        isOpen={!isMobile || sidebarOpen}
       />
+
       {loadingChats ? (
         <div style={{ flex:1, display:'grid', placeItems:'center', color:'#777' }}>Loading chats…</div>
       ) : activeConv ? (
-        <ChatWindow conversation={activeConv} onUpdateMessages={updateMessages} />
+        <ChatWindow conversation={activeConv} onUpdateMessages={updateMessages} isMobile={isMobile} onToggleSidebar={() => setSidebarOpen(true)} />
       ) : (
         <div style={{ flex:1, display:'grid', placeItems:'center', background:'#212121', color:'#aaa', padding:24, textAlign:'center' }}>
           <div style={{ maxWidth:420 }}>
